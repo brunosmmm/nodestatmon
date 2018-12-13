@@ -45,6 +45,7 @@ class WifiDomain(Domain):
             self.timer_cancel(self._wifi_scan_timer)
 
     def _wifi_scan(self):
+        print('wifi scan')
         result = Cell.all(self._iface)
         for cell in result:
             if cell.ssid in self._ssids:

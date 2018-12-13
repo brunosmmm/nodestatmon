@@ -2,8 +2,8 @@
 """Node Statistic monitor."""
 
 from nodestatman.domains import load_domains
-from nodestatman import Controller
-import paho.mqtt.client as mqtt
+from nodestatman.controller import Controller
+from nodestatman.dispatcher.mqtt import MQTTDispatcher
 import json
 import os
 import signal
@@ -13,9 +13,9 @@ _CONFIGURATION_FILE_NAME = 'config.json'
 _CONFIGURATION_PATHS = ['.', '~/.config/nodestatman', '/etc/nodestatman']
 _DOMAIN_CONTAINER_NAME = 'domains'
 _DOMAIN_PATHS = ['.']
+_DISPATCHERS = {'mqtt': MQTTDispatcher}
 _VERBOSITY_LEVELS = {'error': 0, 'warning': 1, 'info': 2, 'debug': 3}
 VERBOSITY = 'debug'
-
 
 
 def log(message, level=None, fatal=False):
@@ -48,8 +48,10 @@ def read_config(path):
         log('ERROR: missing "monitor_domains" key in config', fatal=True)
     if 'domain_config' not in configuration:
         log('ERROR: missing "domain_config" key in config', fatal=True)
-    if 'mqtt' not in configuration:
-        log('ERROR: missing "mqtt" key in configuration', fatal=True)
+    if 'dispatchers' not in configuration:
+        log('ERROR: missing "dispatchers" key in configuration', fatal=True)
+    if 'dispatcher_config' not in configuration:
+        log('ERROR: missing "dispatcher_config" key in config', fatal=True)
 
     monitor_domains = configuration['monitor_domains']
     domain_configuration = configuration['domain_config']
@@ -57,6 +59,13 @@ def read_config(path):
         if domain not in domain_configuration:
             log('ERROR: missing configuration for domain "{}"'.format(domain),
                 fatal=True)
+
+    dispatchers = configuration['dispatchers']
+    dispatcher_configuration = configuration['dispatcher_config']
+    for dispatcher in dispatchers:
+        if dispatcher not in dispatcher_configuration:
+            log('ERROR: missing configuration for dispatcher "{}"'
+                .format(dispatcher), fatal=True)
     return configuration
 
 
@@ -107,15 +116,27 @@ if __name__ == '__main__':
 
     monitored_domains = {domain: loaded_domains[domain]
                          for domain in monitored_domains}
+
+    # verify dispatcher configuration
+    dispatchers = config['dispatchers']
+    for dispatcher in dispatchers:
+        if dispatcher not in _DISPATCHERS:
+            log('ERROR: unknown dispatcher: "{}"'.format(dispatcher,
+                                                         fatal=True))
+
+    dispatchers = {dispatcher: _DISPATCHERS[dispatcher] for dispatcher in dispatchers}
+    dispatcher_configuration = config['dispatcher_config']
+
     # controller
     domain_configuration = config['domain_config']
-    controller = Controller(monitored_domains, domain_configuration)
-    print(controller._domains)
+    controller = Controller(monitored_domains,
+                            domain_configuration,
+                            dispatchers,
+                            dispatcher_configuration)
 
+
+    # start system
     controller.start_controller()
-
-    # mqtt
-    client = mqtt.Client()
 
     # loop forever for now
     while stop is False:

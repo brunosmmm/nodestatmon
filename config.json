@@ -8,9 +8,12 @@
         }
     },
 
-    "mqtt": {
-        "addr": "home39.morais.lan",
-        "prefix": "nodestatman"
+    "dispatchers": ["mqtt"],
+    "dispatcher_config": {
+        "mqtt": {
+            "addr": "home39.morais.lan",
+            "prefix": "nodestatman",
+            "unitname": "home39"
+        }
     }
-
 }
