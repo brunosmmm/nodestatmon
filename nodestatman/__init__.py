@@ -1,6 +1,7 @@
 """"Nodestatman."""
 
 from threading import Thread
+import time
 
 
 class Controller(Thread):
@@ -34,5 +35,10 @@ class Controller(Thread):
 
         return True
 
-    def run(self):
+    def request_timer(self, domain, timeout, callback):
+        """Request timer."""
         pass
+
+    def run(self):
+        while True:
+            time.sleep(0.1)

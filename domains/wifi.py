@@ -8,6 +8,7 @@ class WifiDomain(Domain):
     """Wifi domain."""
 
     _VALID_FIELDS = ['signal', 'quality', 'bitrates', 'channel']
+    _DOMAIN = 'wifi'
 
     def __init__(self, controller, scan_interval=30, ssids=None, interface=None,
                  report=['signal', 'quality'], **kwargs):
@@ -53,4 +54,4 @@ class WifiDomain(Domain):
         return True
 
 
-_DOMAINS = {'wifi': WifiDomain}
+_DOMAINS = {WifiDomain._DOMAIN: WifiDomain}

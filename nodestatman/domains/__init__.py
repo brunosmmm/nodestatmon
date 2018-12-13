@@ -21,7 +21,7 @@ class Domain:
 
     def timer_start(self, timeout, callback):
         """Start a timer."""
-        return self._controller.request_timer(self, timeout, callback)
+        return self._controller.request_timer(self._DOMAIN, timeout, callback)
 
     def timer_cancel(self, timer_uuid):
         """Cancel a timer."""
@@ -37,7 +37,7 @@ class Domain:
 
     def commit_reading(self, instance_name, field_name, value):
         """Commit a reading."""
-        self._controller.commit(self, instance_name, field_name, value)
+        self._controller.commit(self._DOMAIN, instance_name, field_name, value)
 
 
 
