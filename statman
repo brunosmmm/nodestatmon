@@ -4,6 +4,7 @@
 from nodestatman.domains import load_domains
 from nodestatman.controller import Controller
 from nodestatman.dispatcher.mqtt import MQTTDispatcher
+import nodestatman.builtin
 import json
 import os
 import signal
@@ -12,7 +13,8 @@ import time
 _CONFIGURATION_FILE_NAME = 'config.json'
 _CONFIGURATION_PATHS = ['.', '~/.config/nodestatman', '/etc/nodestatman']
 _DOMAIN_CONTAINER_NAME = 'domains'
-_DOMAIN_PATHS = ['.']
+_BUILTIN_DOMAIN_PATH = os.path.dirname(nodestatman.builtin.__file__)
+_DOMAIN_PATHS = [_BUILTIN_DOMAIN_PATH, '.']
 _DISPATCHERS = {'mqtt': MQTTDispatcher}
 _VERBOSITY_LEVELS = {'error': 0, 'warning': 1, 'info': 2, 'debug': 3}
 VERBOSITY = 'debug'
@@ -104,7 +106,7 @@ if __name__ == '__main__':
     for path in _DOMAIN_PATHS:
         domain_path = os.path.join(path, _DOMAIN_CONTAINER_NAME)
         if not os.path.isdir(domain_path):
-            log('WARNING: path is not a directory: {}'.format(domain_path))
+            log('DEBUG: path is not a directory: {}'.format(domain_path))
             continue
 
         loaded_domains.update(load_domains(domain_path))
