@@ -87,10 +87,9 @@ class Controller(Thread):
 
     def _commit(self, domain, instance_name, field_name, value):
         """Commit value."""
-        print('received commit: {}/{}/{} = {}'.format(domain,
-                                                      instance_name,
-                                                      field_name,
-                                                      value))
+        for dispatcher_name, dispatcher in self._dispatchers.items():
+            dispatcher.dispatch_commit(domain, instance_name, field_name,
+                                       value)
 
     def cancel_timer(self, timer_uuid):
         """Cancel timer."""
@@ -100,10 +99,14 @@ class Controller(Thread):
         """Stop controller."""
         for domain in self._domains.values():
             domain.stop_collecting()
+        for dispatcher in self._dispatchers.values():
+            dispatcher.stop_dispatching()
         self._stop_controller.set()
         self.join()
 
     def start_controller(self):
+        for dispatcher in self._dispatchers.values():
+            dispatcher.start_dispatching()
         for domain in self._domains.values():
             domain.start_collecting()
         self.start()
