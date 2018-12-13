@@ -1,0 +1,9 @@
+[Unit]
+Description=Node Stat Monitor
+
+[Service]
+ExecStart=/usr/bin/statman
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
