@@ -1,6 +1,12 @@
 """Dispatcher."""
 
 
+class DispatcherOptionError(Exception):
+    """Dispatcher option error."""
+
+    pass
+
+
 class Dispatcher:
     """Dispatcher."""
 
