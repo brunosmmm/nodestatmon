@@ -1,0 +1,14 @@
+{
+    "monitor_domains": ["wifi"],
+    "domain_config": {
+        "wifi": {
+
+        }
+    },
+
+    "mqtt": {
+        "addr": "home39.morais.lan",
+        "prefix": "nodestatman"
+    }
+
+}

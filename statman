@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Node Statistic monitor."""
+
+from nodestatman.domains import load_domains
+import paho.mqtt as mqtt
+import json
+import os
+
+_CONFIGURATION_FILE_NAME = 'config.json'
+_CONFIGURATION_PATHS = ['.', '~/.config/nodestatman', '/etc/nodestatman']
+_DOMAIN_CONTAINER_NAME = 'domains'
+_DOMAIN_PATHS = ['.']
+_VERBOSITY_LEVELS = {'error': 0, 'warning': 1, 'info': 2, 'debug': 3}
+VERBOSITY = 'debug'
+
+
+def log(message, level=None, fatal=False):
+    """Log a message."""
+    if level is None:
+        if message.startswith('ERROR'):
+            level = 'error'
+        elif message.startswith('WARNING'):
+            level = 'warning'
+        elif message.startswith('DEBUG'):
+            level = 'debug'
+        else:
+            level = 'info'
+    if _VERBOSITY_LEVELS[level] <= _VERBOSITY_LEVELS[VERBOSITY]:
+        print(message)
+
+    if fatal:
+        exit(1)
+
+
+def read_config(path):
+    """Read configuration file and validate."""
+    with open(config_path, 'r') as f:
+        try:
+            configuration = json.load(f)
+        except Exception:
+            log('ERROR: error in json syntax', fatal=True)
+
+    if 'monitor_domains' not in configuration:
+        log('ERROR: missing "monitor_domains" key in config', fatal=True)
+    if 'domain_config' not in configuration:
+        log('ERROR: missing "domain_config" key in config', fatal=True)
+    if 'mqtt' not in configuration:
+        log('ERROR: missing "mqtt" key in configuration', fatal=True)
+
+    monitor_domains = configuration['monitor_domains']
+    domain_configuration = configuration['domain_config']
+    for domain in monitor_domains:
+        if domain not in domain_configuration:
+            log('ERROR: missing configuration for domain "{}"'.format(domain),
+                fatal=True)
+    return configuration
+
+
+if __name__ == '__main__':
+
+    # read configuration file
+    config_path = None
+    for path in _CONFIGURATION_PATHS:
+        if os.path.isfile(os.path.join(path, _CONFIGURATION_FILE_NAME)):
+            config_path = os.path.join(path, _CONFIGURATION_FILE_NAME)
+            break
+
+    if config_path is None:
+        log('ERROR: could not find configuration file')
+        exit(1)
+
+    log('DEBUG: loading configuration from {}'.format(config_path))
+    config = read_config(config_path)
+
+    monitored_domains = config['monitor_domains']
+    log('DEBUG: will monitor these domains: {}'
+        .format(monitored_domains))
+
+    # load domains
+    loaded_domains = {}
+    for path in _DOMAIN_PATHS:
+        domain_path = os.path.join(path, _DOMAIN_CONTAINER_NAME)
+        if not os.path.isdir(domain_path):
+            log('WARNING: path is not a directory: {}'.format(domain_path))
+            continue
+
+        loaded_domains.update(load_domains(domain_path))
+
+    # verify everything is loaded
+    for domain in monitored_domains:
+        if domain not in loaded_domains:
+            log('ERROR: unknown domain "{}"'.format(domain), fatal=True)
+
+    # mqtt
+    client = mqtt.Client()
