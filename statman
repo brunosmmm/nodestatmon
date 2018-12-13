@@ -6,6 +6,8 @@ from nodestatman import Controller
 import paho.mqtt.client as mqtt
 import json
 import os
+import signal
+import time
 
 _CONFIGURATION_FILE_NAME = 'config.json'
 _CONFIGURATION_PATHS = ['.', '~/.config/nodestatman', '/etc/nodestatman']
@@ -13,6 +15,7 @@ _DOMAIN_CONTAINER_NAME = 'domains'
 _DOMAIN_PATHS = ['.']
 _VERBOSITY_LEVELS = {'error': 0, 'warning': 1, 'info': 2, 'debug': 3}
 VERBOSITY = 'debug'
+
 
 
 def log(message, level=None, fatal=False):
@@ -59,6 +62,16 @@ def read_config(path):
 
 if __name__ == '__main__':
 
+    stop = False
+    def sigint(signal, frame):
+        """Handle sigint"""
+        global stop
+        print('shutting down')
+        controller.stop_controller()
+        stop = True
+
+    signal.signal(signal.SIGINT, sigint)
+
     # read configuration file
     config_path = None
     for path in _CONFIGURATION_PATHS:
@@ -99,5 +112,11 @@ if __name__ == '__main__':
     controller = Controller(monitored_domains, domain_configuration)
     print(controller._domains)
 
+    controller.start_controller()
+
     # mqtt
     client = mqtt.Client()
+
+    # loop forever for now
+    while stop is False:
+        time.sleep(0.1)

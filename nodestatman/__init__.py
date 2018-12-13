@@ -1,7 +1,13 @@
 """"Nodestatman."""
 
-from threading import Thread
+from threading import Thread, Event
+from collections import namedtuple, deque
+import datetime
+import shortuuid
 import time
+
+
+ControllerTimer = namedtuple('ControllerTimer', ['uuid', 'domain', 'period', 'timeout', 'callback'])
 
 
 class Controller(Thread):
@@ -10,7 +16,10 @@ class Controller(Thread):
     def __init__(self, domains, domain_configurations, **kwargs):
         """Initialize."""
         super().__init__(**kwargs)
+        self._stop_controller = Event()
         self._domains = {}
+        self._timers = {}
+        self._timers_to_cancel = deque()
         for domain_name, domain_class in domains.items():
             domain_configuration = domain_configurations[domain_name]
             ret = self._initialize_domain(domain_name,
@@ -35,10 +44,63 @@ class Controller(Thread):
 
         return True
 
-    def request_timer(self, domain, timeout, callback):
+    def _request_timer(self, domain, timeout, callback):
         """Request timer."""
-        pass
+        timer_uuid = shortuuid.uuid()
+        self._timers[timer_uuid] = ControllerTimer(timer_uuid,
+                                                   domain,
+                                                   timeout,
+                                                   datetime.datetime.now() +
+                                                   datetime.timedelta(seconds=timeout),
+                                                   callback)
+        return timer_uuid
+
+    def _commit(self, domain, instance_name, field_name, value):
+        """Commit value."""
+        print('received commit')
+
+    def cancel_timer(self, timer_uuid):
+        """Cancel timer."""
+        self._timers_to_cancel.appendleft(timer_uuid)
+
+    def stop_controller(self):
+        """Stop controller."""
+        for domain in self._domains.values():
+            domain.stop_collecting()
+        self._stop_controller.set()
+        self.join()
+
+    def start_controller(self):
+        for domain in self._domains.values():
+            domain.start_collecting()
+        self.start()
 
     def run(self):
-        while True:
-            time.sleep(0.1)
+        while not self._stop_controller.is_set():
+            now = datetime.datetime.now()
+            expired_timers = []
+            if len(self._timers_to_cancel) > 0:
+                cancel_uuid = self._timers_to_cancel.pop()
+                if cancel_uuid in self._timers:
+                    del self._timers[cancel_uuid]
+            for timer_uuid, timer in self._timers.items():
+                td = timer.timeout - now
+                if td.seconds > 0:
+                    # not expired
+                    continue
+
+                # expired
+                restart = False
+                if timer.callback is not None:
+                    restart = timer.callback()
+
+                if restart is False:
+                    expired_timers.append(timer_uuid)
+                else:
+                    timer.timeout = now + datetime.timedelta(
+                        seconds=timer.period)
+
+            for timer in expired_timers:
+                del self._timers[timer]
+
+            time.sleep(1)

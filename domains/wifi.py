@@ -36,13 +36,13 @@ class WifiDomain(Domain):
 
     def start_collecting(self):
         """Start collecting."""
-        self._wifi_scan_timer = self.start_timer(self._scan_interval,
+        self._wifi_scan_timer = self.timer_start(self._scan_interval,
                                                  self._wifi_scan)
 
     def stop_collecting(self):
         """Stop collecting."""
         if self._wifi_scan_timer is not None:
-            self.cancel_timer(self._wifi_scan_timer)
+            self.timer_cancel(self._wifi_scan_timer)
 
     def _wifi_scan(self):
         result = Cell.all(self._iface)
