@@ -53,6 +53,8 @@ def load_domains(path):
         base, ext = os.path.splitext(os.path.join(path, f))
         if ext != '.py':
             continue
+        if base == '__init__':
+            continue
 
         domains = load_domain(base, os.path.join(path, f))
         loaded_domains.update(domains)
@@ -66,5 +68,8 @@ def load_domain(name, path):
     spec = importlib.util.spec_from_file_location(name, full_path)
     _module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(_module)
+
+    if not hasattr(_module, '_DOMAINS'):
+        return {}
 
     return _module._DOMAINS
