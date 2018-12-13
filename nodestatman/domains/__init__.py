@@ -27,6 +27,18 @@ class Domain:
         """Cancel a timer."""
         self._controller.cancel_timer(timer_uuid)
 
+    def register_instance(self, instance_name):
+        """Register an instance."""
+        pass
+
+    def register_field(self, field_name):
+        """Register field name."""
+        pass
+
+    def commit_reading(self, instance_name, field_name, value):
+        """Commit a reading."""
+        self._controller.commit(self, instance_name, field_name, value)
+
 
 
 def load_domains(path):

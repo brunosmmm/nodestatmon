@@ -2,7 +2,9 @@
     "monitor_domains": ["wifi"],
     "domain_config": {
         "wifi": {
-
+            "scan_interval": 30,
+            "interface": "wlp1s0",
+            "ssids": ["Morais"]
         }
     },
 

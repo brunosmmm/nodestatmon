@@ -2,7 +2,8 @@
 """Node Statistic monitor."""
 
 from nodestatman.domains import load_domains
-import paho.mqtt as mqtt
+from nodestatman import Controller
+import paho.mqtt.client as mqtt
 import json
 import os
 
@@ -90,6 +91,13 @@ if __name__ == '__main__':
     for domain in monitored_domains:
         if domain not in loaded_domains:
             log('ERROR: unknown domain "{}"'.format(domain), fatal=True)
+
+    monitored_domains = {domain: loaded_domains[domain]
+                         for domain in monitored_domains}
+    # controller
+    domain_configuration = config['domain_config']
+    controller = Controller(monitored_domains, domain_configuration)
+    print(controller._domains)
 
     # mqtt
     client = mqtt.Client()
