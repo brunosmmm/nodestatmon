@@ -165,8 +165,8 @@ class Controller(Thread):
             # process pushed values
             while len(self._pushed_values) > 0:
                 popped = self._pushed_values.popleft()
-                self._commit(popped.domain, popped.instance_name,
-                             popped.field_name, popped.value)
+                self._commit(popped.domain, popped.instance,
+                             popped.field, popped.value)
 
             now = datetime.datetime.now()
             expired_timers = []
