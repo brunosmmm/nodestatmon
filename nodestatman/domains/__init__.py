@@ -38,10 +38,13 @@ class Domain:
 
     def install_worker(self, loopfn):
         """Install worker thread."""
-        self._controller._request_worker(loopfn)
+        ret = self._controller._request_worker(loopfn)
+        self._logger.debug('installed worker {}'.format(ret))
+        return ret
 
     def remove_worker(self, worker_uuid):
         """Remove worker thread."""
+        self._logger.debug('worker {} cancelled'.format(worker_uuid))
         self._controller.kill_worker(worker_uuid)
 
     def register_instance(self, instance_name):

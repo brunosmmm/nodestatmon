@@ -27,14 +27,21 @@ class MotionSensorDomain(Domain):
 
     def _motion_detect(self, stop_flag):
         """Motion detect loop."""
+        state = 'wait_motion'
         while stop_flag.is_set() is False:
             # blocking motion sensing
-            self._sensor.wait_for_motion()
-            self.push_reading('motion{}'.format(self._gpionum),
-                              'motion', 1)
-            self._sensor.wait_for_no_motion()
-            self.push_reading('motion{}'.format(self._gpionum),
-                              'motion', 0)
+            if state == 'wait_motion':
+                wait = self._sensor.wait_for_motion(10)
+                if wait is True:
+                    self.push_reading('motion{}'.format(self._gpionum),
+                                      'motion', 1)
+                    state = 'wait_no_motion'
+            else:
+                wait = self._sensor.wait_for_no_motion(10)
+                if wait is True:
+                    self.push_reading('motion{}'.format(self._gpionum),
+                                      'motion', 0)
+                    state = 'wait_motion'
 
 
 _DOMAINS = {MotionSensorDomain._DOMAIN: MotionSensorDomain}
