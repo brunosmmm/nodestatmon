@@ -18,7 +18,7 @@ _BUILTIN_DOMAIN_PATH = os.path.dirname(nodestatman.builtin.__file__)
 _DOMAIN_PATHS = [_BUILTIN_DOMAIN_PATH, '.', '/usr/share/nodestatman']
 _DISPATCHERS = {'mqtt': MQTTDispatcher}
 LOGGER = logging.getLogger('statman')
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
 def log(message, level=None, fatal=False):
