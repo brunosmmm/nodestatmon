@@ -31,6 +31,10 @@ class OneWireTempDomain(Domain):
         device_folders = glob.glob(base_dir + '28*')
         device_files = [folder + '/w1_slave' for folder in device_folders]
 
+        if len(device_files) < 1:
+            # no sensors
+            self._logger.debug('no sensors found')
+
         def read_raw(fname):
             with open(fname, 'r') as f:
                 lines = f.readlines()
