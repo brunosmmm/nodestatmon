@@ -5,6 +5,7 @@ from collections import namedtuple, deque
 import datetime
 import shortuuid
 import time
+import logging
 
 
 class ControllerTimer:
@@ -31,6 +32,7 @@ class Controller(Thread):
         self._dispatchers = {}
         self._timers = {}
         self._timers_to_cancel = deque()
+        self._logger = logging.getLogger('statman.controller')
         # create dispatchers
         for dispatcher_name, dispatcher_class in dispatchers.items():
             dispatcher_configuration = dispatcher_configurations[dispatcher_name]
@@ -48,6 +50,8 @@ class Controller(Thread):
                                configuration):
         try:
             dispatcher = dispatcher_class(self, **configuration)
+            self._logger.info('initialized dispatcher {}'
+                              .format(dispatcher_name))
         except Exception as ex:
             print(ex)
             return False
@@ -65,6 +69,7 @@ class Controller(Thread):
 
         try:
             domain = domain_class(self, **configuration)
+            self._logger.info('initialized domain {}'.format(domain_name))
         except Exception as ex:
             # log some stuff
             return False
@@ -103,6 +108,7 @@ class Controller(Thread):
             dispatcher.stop_dispatching()
         self._stop_controller.set()
         self.join()
+        self._logger.info('controller stoped')
 
     def start_controller(self):
         for dispatcher in self._dispatchers.values():
@@ -110,6 +116,7 @@ class Controller(Thread):
         for domain in self._domains.values():
             domain.start_collecting()
         self.start()
+        self._logger.info('controller started')
 
     def run(self):
         while not self._stop_controller.is_set():
@@ -131,6 +138,8 @@ class Controller(Thread):
                     restart = timer.callback()
 
                 if restart is False:
+                    self._logger.debug('marking timer {} for removal'
+                                       .format(timer_uuid))
                     expired_timers.append(timer_uuid)
                 else:
                     timer.timeout = now + datetime.timedelta(

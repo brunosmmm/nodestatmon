@@ -9,6 +9,7 @@ import json
 import os
 import signal
 import time
+import logging
 
 _CONFIGURATION_FILE_NAME = 'config.json'
 _CONFIGURATION_PATHS = ['.', '~/.config/nodestatman', '/etc/nodestatman']
@@ -16,23 +17,21 @@ _DOMAIN_CONTAINER_NAME = 'domains'
 _BUILTIN_DOMAIN_PATH = os.path.dirname(nodestatman.builtin.__file__)
 _DOMAIN_PATHS = [_BUILTIN_DOMAIN_PATH, '.', '/usr/share/nodestatman']
 _DISPATCHERS = {'mqtt': MQTTDispatcher}
-_VERBOSITY_LEVELS = {'error': 0, 'warning': 1, 'info': 2, 'debug': 3}
-VERBOSITY = 'debug'
+LOGGER = logging.getLogger('statman')
+logging.basicConfig(level=logging.DEBUG)
 
 
 def log(message, level=None, fatal=False):
     """Log a message."""
     if level is None:
         if message.startswith('ERROR'):
-            level = 'error'
+            LOGGER.error(message)
         elif message.startswith('WARNING'):
-            level = 'warning'
+            LOGGER.warning(message)
         elif message.startswith('DEBUG'):
-            level = 'debug'
+            LOGGER.debug(message)
         else:
-            level = 'info'
-    if _VERBOSITY_LEVELS[level] <= _VERBOSITY_LEVELS[VERBOSITY]:
-        print(message)
+            LOGGER.info(message)
 
     if fatal:
         exit(1)

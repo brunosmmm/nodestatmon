@@ -2,14 +2,20 @@
 
 import os
 import importlib.util
+import logging
 
+LOGGER = logging.getLogger('statman.domain.LOADER')
 
 class Domain:
     """Abstract domain class."""
 
+    _DOMAIN = None
+
     def __init__(self, controller, **kwargs):
         """Initialize."""
         self._controller = controller
+        self._logger = logging.getLogger('statman.domain.{}'
+                                         .format(self._DOMAIN))
 
     def start_collecting(self):
         """Start collecting."""
@@ -21,10 +27,13 @@ class Domain:
 
     def timer_start(self, timeout, callback):
         """Start a timer."""
-        return self._controller._request_timer(self._DOMAIN, timeout, callback)
+        ret = self._controller._request_timer(self._DOMAIN, timeout, callback)
+        self._logger.debug('started timer {}'.format(ret))
+        return ret
 
     def timer_cancel(self, timer_uuid):
         """Cancel a timer."""
+        self._logger.debug('timer {} canceled'.format(timer_uuid))
         self._controller.cancel_timer(timer_uuid)
 
     def register_instance(self, instance_name):
@@ -37,6 +46,9 @@ class Domain:
 
     def commit_reading(self, instance_name, field_name, value):
         """Commit a reading."""
+        self._logger.debug('commiting reading {}.{}'.format(
+            instance_name,
+            field_name))
         self._controller._commit(self._DOMAIN, instance_name, field_name, value)
 
 
@@ -57,6 +69,7 @@ def load_domains(path):
             continue
 
         domains = load_domain(base, os.path.join(path, f))
+        LOGGER.info('loaded domains: {}'.format(list(domains.keys())))
         loaded_domains.update(domains)
 
     return loaded_domains
