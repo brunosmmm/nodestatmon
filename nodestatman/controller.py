@@ -128,7 +128,7 @@ class Controller(Thread):
                     del self._timers[cancel_uuid]
             for timer_uuid, timer in self._timers.items():
                 td = timer.timeout - now
-                if td.seconds > 0:
+                if td.total_seconds() > 0:
                     # not expired
                     continue
 
@@ -144,6 +144,8 @@ class Controller(Thread):
                 else:
                     timer.timeout = now + datetime.timedelta(
                         seconds=timer.period)
+                    self._logger.debug('rescheduling timer {} expiry to {}'
+                                       .format(timer_uuid, timer.timeout))
 
             for timer in expired_timers:
                 del self._timers[timer]
