@@ -109,7 +109,7 @@ class Controller(Thread):
             raise RuntimeError('loop must be callable')
         worker_uuid = shortuuid.uuid()
         stop_flag = Event()
-        thread = Thread(target=loop, args=(stop_flag))
+        thread = Thread(target=loop, args=[stop_flag])
         self._workers[worker_uuid] = (thread, stop_flag)
 
         return worker_uuid
