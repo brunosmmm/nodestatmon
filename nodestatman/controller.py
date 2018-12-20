@@ -155,7 +155,7 @@ class Controller(Thread):
         for domain in self._domains.values():
             domain.start_collecting()
         # start worker threads
-        for uuid, worker in self._workers.items():
+        for uuid, (worker, _) in self._workers.items():
             worker.start()
         self.start()
         self._logger.info('controller started')
