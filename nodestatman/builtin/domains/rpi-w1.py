@@ -39,12 +39,19 @@ class OneWireTempDomain(Domain):
         # read temperatures
         for idx, fname in enumerate(device_files):
             ret = read_raw(fname)
+            if ret is None:
+                self._logger.warning('failed to read {}'.format(fname))
+                continue
             success = ret[0].strip().endswith('YES')
             if success is False:
+                self._logger.warning('invalid reading while reading {}'
+                                     .format(fname))
                 continue
 
             temp_pos = ret[1].find('t=')
             if temp_pos == -1:
+                self._logger.warning('invalid reading while reading {}'
+                                     .format(fname))
                 continue
 
             temp_str = ret[1][temp_pos+2:]
