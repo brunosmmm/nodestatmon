@@ -36,6 +36,14 @@ class Domain:
         self._logger.debug('timer {} canceled'.format(timer_uuid))
         self._controller.cancel_timer(timer_uuid)
 
+    def install_worker(self, loopfn):
+        """Install worker thread."""
+        self._controller._request_worker(loopfn)
+
+    def remove_worker(self, worker_uuid):
+        """Remove worker thread."""
+        self._controller.kill_worker(worker_uuid)
+
     def register_instance(self, instance_name):
         """Register an instance."""
         pass
@@ -50,6 +58,13 @@ class Domain:
             instance_name,
             field_name))
         self._controller._commit(self._DOMAIN, instance_name, field_name, value)
+
+    def push_reading(self, instance_name, field_name, value):
+        self._logger.debug('pushing reading {}.{}'.format(
+            instance_name,
+            field_name
+        ))
+        self._controller._push(self._DOMAIN, instance_name, field_name, value)
 
 
 

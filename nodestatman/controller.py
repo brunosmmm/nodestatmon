@@ -20,6 +20,17 @@ class ControllerTimer:
         self.callback = callback
 
 
+class PushValue:
+    """Push value."""
+
+    def __init__(self, domain, instance_name, field_name, value):
+        """Initialize."""
+        self.domain = domain
+        self.instance = instance_name
+        self.field = field_name
+        self.value = value
+
+
 class Controller(Thread):
     """Controller."""
 
@@ -31,7 +42,9 @@ class Controller(Thread):
         self._domains = {}
         self._dispatchers = {}
         self._timers = {}
+        self._workers = {}
         self._timers_to_cancel = deque()
+        self._pushed_values = deque()
         self._logger = logging.getLogger('statman.controller')
         # create dispatchers
         for dispatcher_name, dispatcher_class in dispatchers.items():
@@ -90,15 +103,38 @@ class Controller(Thread):
                                                    callback)
         return timer_uuid
 
+    def _request_worker(self, loop):
+        """Request worker thread."""
+        if not callable(loop):
+            raise RuntimeError('loop must be callable')
+        worker_uuid = shortuuid.uuid()
+        stop_flag = Event()
+        thread = Thread(target=loop, args=(stop_flag))
+        self._workers[worker_uuid] = (thread, stop_flag)
+
+        return worker_uuid
+
     def _commit(self, domain, instance_name, field_name, value):
         """Commit value."""
         for dispatcher_name, dispatcher in self._dispatchers.items():
             dispatcher.dispatch_commit(domain, instance_name, field_name,
                                        value)
 
+    def _push(self, domain, instance_name, field_name, value):
+        """Push value (async)."""
+        self._pushed_values.append(PushValue(domain, instance_name, field_name, value))
+
     def cancel_timer(self, timer_uuid):
         """Cancel timer."""
         self._timers_to_cancel.appendleft(timer_uuid)
+
+    def kill_worker(self, worker_uuid):
+        """Kill worker thread."""
+        if worker_uuid in self._workers:
+            thread, stop_flag = self._workers[worker_uuid]
+            stop_flag.set()
+            thread.join()
+            del self._workers[worker_uuid]
 
     def stop_controller(self):
         """Stop controller."""
@@ -106,6 +142,9 @@ class Controller(Thread):
             domain.stop_collecting()
         for dispatcher in self._dispatchers.values():
             dispatcher.stop_dispatching()
+        # stop worker threads
+        for uuid in self._workers.keys():
+            self.kill_worker(uuid)
         self._stop_controller.set()
         self.join()
         self._logger.info('controller stoped')
@@ -115,11 +154,20 @@ class Controller(Thread):
             dispatcher.start_dispatching()
         for domain in self._domains.values():
             domain.start_collecting()
+        # start worker threads
+        for uuid, worker in self._workers.items():
+            worker.start()
         self.start()
         self._logger.info('controller started')
 
     def run(self):
         while not self._stop_controller.is_set():
+            # process pushed values
+            while len(self._pushed_values) > 0:
+                popped = self._pushed_values.popleft()
+                self._commit(popped.domain, popped.instance_name,
+                             popped.field_name, popped.value)
+
             now = datetime.datetime.now()
             expired_timers = []
             if len(self._timers_to_cancel) > 0:
