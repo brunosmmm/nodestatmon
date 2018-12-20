@@ -54,4 +54,4 @@ class OneWireTempDomain(Domain):
         return True
 
 
-_DOMAINS = {OneWireTempDomain._DOMAIN, OneWireTempDomain}
+_DOMAINS = {OneWireTempDomain._DOMAIN: OneWireTempDomain}
